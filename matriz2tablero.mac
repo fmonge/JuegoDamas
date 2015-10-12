@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+%macro cargar 0
+
+;.ver1:
+	xor	rax, rax
+	xor	r13, r13
+	xor	rdi, rdi
+	xor	r13, r13
+	add	r13, r10
+;	lea	rdi, [lenFila]
+	mov	rdi, lenFila
+	imul	r13, rdi	
+;.ver2:
+	xor	rax, rax
+	push	rcx
+	imul	rcx, 16
+	add	r13, rcx
+	pop	rcx
+;.ver3:		
+	xor	rax, rax
+	mov	rax, rcx
+	dec	rax
+	imul	rax, 18
+	add	r13, rbx
+;.ver4:	
+	add	r13, r11
+;            	R10					RBX					RCX	r11->13/22
+; (lenFila * "XfilaX") + ( 16 * "fila" ) + ( 18 * ("col1"-1) ) + par/imp
+	mov	al, byte[juego+r12]	; 
+	mov	byte[tablero +lenLinea1 + r13], al ; 1
+
+%endmacro

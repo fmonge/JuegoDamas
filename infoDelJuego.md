@@ -1,4 +1,4 @@
-Primer Proyecto Programado: Damas
+Damas:
 
 Consiste en la implementación de un software para jugar «Damas»
 utilizando lenguaje ensamblador. El objetivo es afianzar algunos de los conceptos y técnicas de
@@ -57,4 +57,4 @@ pierde a quien le corresponde el movimiento.
 como sería de esperar si un jugador quiere reanudar el juego la aplicación debe permitirle
 cargar desde un archivo el estado del juego.
 
-# Proyecto_Damas
+

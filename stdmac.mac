@@ -1,0 +1,71 @@
+; Macro para sys_read, sys_write, sys_exit...
+%define sys_read 0
+%define sys_write 1 
+%define std_in 1
+%define std_out 1
+%define std_err 2
+%define sys_exit 60
+%define newline 0x0A
+
+
+; macros de escritura y lectura  <<---
+	
+%macro print 2  ; mensaje , lenMensaje
+	push 	rax
+	push 	rdi
+	push 	rsi
+	push 	rdx
+
+	mov 	rax, sys_write
+	mov 	rdi, std_out
+	mov 	rsi, %1
+	mov 	rdx, %2
+	syscall
+
+	pop 	rdx
+	pop 	rsi
+	pop 	rdi
+	pop 	rax
+%endmacro
+
+%macro leer 2   ;in = buffer, len out =  len lecura en r8,
+;        push rax
+	push 	rdi
+	push 	rsi
+	push 	rdx
+
+	mov 	rax, sys_read
+	mov 	rdi, std_in
+	mov 	rsi, %1
+	mov 	rdx, %2
+	syscall
+	; len de lectura =  rax 
+	pop 	rdx
+	pop 	rsi
+	pop 	rdi
+;	pop 	rax
+%endmacro
+
+%macro movBuf 2 ; copia un buffer de tamaño rcx a otro de igual tamaño
+	push 	rcx						; agrgar tamaño como "variable"***********
+	lea 	rdi, [%1]
+	lea 	rsi, [%2]
+	rep 	movsb
+	pop 	rcx
+%endmacro
+
+; sys_exit
+
+%macro exit 0
+	xor 	rsi, rsi
+	mov	rax, sys_write
+	mov	rdi, std_out
+	mov	rsi, newline
+	mov	rdx, 1
+	syscall
+	mov	rax, sys_exit
+	mov	rdi, 0           ; return 0, success
+	syscall
+%endmacro
+;*****************
+

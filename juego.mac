@@ -1,0 +1,50 @@
+
+%macro llenarTablero	
+	push	rax
+	push	rbx			; filas
+	push	rcx			; columnas	
+	push	r10			; Mapeo de lineas  
+
+	xor	rax, rax
+	xor	rbx, rbx
+	xor	rbx, rbx
+	mov	rax, 8
+
+	pop	rcx
+	pop	rbx
+	pop	rax
+
+%endmacro
+	
+.continue:
+	cmp	rcx, 8	;col: 0···7
+	jne 	.filas	;col != 7
+
+	cmp	rbx, 8
+	je		.fin
+	xor	rcx, rcx
+	inc	rbx
+
+.filas:
+	cmp	rbx, 0
+	je		fila0
+	cmp	rbx, 1
+	je		fila1
+	cmp	rbx, 2
+	je		fila2
+	cmp	rbx, 3
+	je		fila3
+	cmp	rbx, 4
+	je		fila5
+	cmp	rbx, 5
+	je		fila5
+	cmp	rbx, 6
+	je		fila6
+	cmp	rbx, 7
+	je		fila7
+	
+	inc	rcx	;col
+	
+	.fin:
+	;loop .continue	; usa rax como contador
+
