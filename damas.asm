@@ -12,9 +12,6 @@ section .bss
 	buffFila:		resb 8	;
 	buffColu:		resb 8		;
 
-	arrayJuego:		resb 8*8
-
-
 	
 section .data
 	
@@ -60,12 +57,26 @@ section .data
 
    lenTablero: equ $ - tablero
 
+	
+	; los '#' son los espacios en donde no puede ir fichas
+	arrayJuego 	db	'o#o#o#o#'
+	arrayJuego1 db '#o#o#o#o'
+	arrayJuego2 db	'o#o#o#o#'
+	arrayJuego3 db '# # # # '
+	arrayJuego4 db ' # # # #'
+	arrayJuego5 db '#x#x#x#x'
+	arrayJuego6 db	'x#x#x#x#'
+	arrayJuego7 db '#x#x#x#x'
+	lenArrayJuego	equ $ - arrayJuego 
+
 	errMov	db 'Movimiento no permitido', 0x0A
 	lenErrMov	equ	$ - errMov
 
-	errDatos	db 'Movimiento no permitido', 0x0A
-	lenErrDatos	equ	$ - errDatos
+	errFicha	db 'No puede elegir esta posición.', 0x0A
+	lenErrFicha	equ	$ - errFicha
 
+	errVacio	db 'No hay ficha para mover', 0x0A
+	lenErrVacio	equ	$ - errVacio
 
 	errTurno	db 'Continua el juador: ' 
 	lenErrTurno	equ	$ - errTurno
@@ -78,21 +89,151 @@ section .data
 
 	msjMoverA	db '¿A que posición la desea mover?',0x0A
 	lenMsjMoverA equ	$ - msjMoverA
-	
-;	juego	db '4321aVcd5678efghABCDqwerEFGHwxyz4321abcd5678efghABCDqwerEFGHwxyz'
-;	juego db '0 2 4 6 8 A C E G I G M O Q S V X Y b d f h j l n p r u w y " $ '
-;	juego	db	'0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P Q R S T U V W'
-	juego	db	'0123456789ABCDEFGHIJ0123456789ABCDEFGHIJ0123456789ABCDEFGHIJ01234'
 
+	msjOk	db 'Ok entró', 0x0A
+	lenMsjOk	equ	$ - msjOk
+
+	
+;	datos	db	'0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P Q R S T U V W'
+	datos	db	'1234oooooooo        xxxxxxxxxxxx'	;pasar a -> bss
+	tempoo db '??'
 SECTION .text
 	global _start
+
+	;rdi  y rsi
+		;  8, 16, 32nd 64-bit references, respectively:
+;
+;     AL/AH, CL/CH, DL/DH, BL/BH, SPL, BPL, SIL, DIL, R8B-R15B 
+;     AX, CX, DX, BX, SP, BP, SI, DI, R8W-R15W 
+;     EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI, R8D-R15D 
+;     RAX, RCX, RDX, RBX, RSP, RBP, RSI, RDI,					
+
+;	mov r10, lenTablero;len = 3879	;lenFill = 143
+
+
 
 _start:
 
 	print msjInicial, lenMsjInicial
+;	print tablero, lenTablero
+juegoLoop:
+	call	llenarDatosJuego
+	call 	llenarTablero
+
+	print tablero, lenTablero	
+
+	xor	r8, r8
+	mov	r8, 'x'
+	call	leerPosA
+	
+;	jmp	juegoLoop
+
+FinDelJuego:
+	exit
+
+
+juego:
+
+	print msjInicial, lenMsjInicial
 	print tablero, lenTablero
 
+
+leerPosA:
+	push	rax
+	push	rbx
+	.leerA:
+	print	msjMoverDe, lenMsjMoverDe
+	leer  buffPosA, lenBuffPos	; len de lectura en rax
+			;una letra y un numero mas entet
+	cmp	rax, 3	;dos letras y el retorno
+	jne	.leerA
+;	je		infoOk
+	mov	al, byte [buffPosA]
+	mov	bl, byte [buffPosA+1]
+	sub	al, 'a'	
+	;dec	al
+	imul	rax, 8
+	sub	bl, '0'	
+	dec	bl
+	;dec	rax
+	add	rax, rbx
+	cmp	al, 3	;
+	je		infoOk
+	xor	rbx, rbx
+	mov	bl, byte[arrayJuego+rax]; pos elegida
+
+	cmp	r8,'o'
+	je		.jueganO	
+
+	cmp	r8,'x'
+	je		.jueganX
 	
+.jueganX:
+
+	cmp	bl, 'x'
+	je		.continueX
+	cmp	bl, 'X'
+	jne	.noPuede
+	.continueX:
+	mov	byte[tempoo], bl
+	print	tempoo, 2
+;	jne	FinDelJuegoa
+	print	msjMoverA, lenMsjMoverA
+	mov	r8, 'o'
+	jmp	.finLeer
+.jueganO:
+	nop	
+.noPuede:
+
+		print  errFicha, lenErrFicha
+.finLeer:
+	pop	rbx
+	pop	rax
+	ret
+
+
+leerPosB:
+	leer  buffPosB, lenBuffPos	; len de lectura en rax
+	print buffPosB, lenBuffPos
+	ret
+
+
+infoOk:
+	print msjOk, lenMsjOk
+	exit
+	
+
+
+
+
+llenarDatosJuego:
+	push	r8
+	push	r9
+	push	rax
+	xor	r8, r8
+	xor	r9, r9
+	call llenarDatosJuegoAux
+	pop	rax
+	pop	r9
+	pop	r8
+	ret
+
+llenarDatosJuegoAux:
+	;datos	db 'xxx...ooo'
+	;arrayJuego resb 64
+	mov	al, byte[arrayJuego+r8]	
+	inc	r8
+	cmp	al, '#'
+	je		llenarDatosJuegoAux
+	mov	byte[datos+r9], al 
+	inc	r9
+	cmp	r8, lenArrayJuego
+	jne	llenarDatosJuegoAux
+	ret
+
+
+
+
 llenarTablero:
 	push	rax			; tmp valor a mover
 	push	rbx			; filas
@@ -124,11 +265,6 @@ llenarTablero:
 	pop	rbx
 	pop	rax
 
-print tablero, lenTablero;  
-
-	exit
-	;ret
-
 
 llenarTableroAux:
 ;call filas
@@ -154,9 +290,6 @@ llenarTableroAux:
 .listo:
 	ret
 
-
-.fin:
-	exit
 
 filas:
 ;	jmp	.cargar
@@ -265,16 +398,16 @@ filas:
 ;            	R10					R15   	           R15 	 	r11->13/22
 ; (lenFila * "XfilaX") + ( 16 * "fila" ) + ( 18 * ("col1"-1) ) + par/imp
 
-	mov	al, byte[juego+r12]	; 
+	mov	al, byte[datos+r12]	; 
 	mov	byte[tablero +lenLinea1 + r13], al ; 1
 	
-.veros:
-	print tablero, lenTablero
+;.veros:
+;	print tablero, lenTablero
 
 cmp r14, 9
 jne	.good
 .lleno:
-exit
+	
 .good:
 	ret
 
@@ -288,22 +421,3 @@ exit
 
 ;	mov r10, lenTablero;len = 3879	;lenFill = 143
 
-printTablero:
-	print	tablero, lenTablero; lenLinea1 + lenFill 
-	print msjMoverDe, lenMsjMoverDe
-
-jmp readDe
-	
-
-readDe:	;
-		leer  buffPosA, lenBuffPos	; len de lectura en rax
-		print buffPosA, lenBuffPos			
-readA:
-		leer  buffPosB, lenBuffPos	; len de lectura en rax
-		print buffPosB, lenBuffPos
-		
-	exit
-
-ErrorLectura:
-	print	errDatos, lenErrDatos
-	ret
