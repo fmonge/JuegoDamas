@@ -78,14 +78,24 @@ section .data
 
 	
 	; los '#' son los espacios en donde no puede ir fichas
-	arrayJuego 	db	'o#o#o#o#'
-	arrayJuego1 db '#o#o#o#o'
-	arrayJuego2 db	'o#o#o#o#'
-	arrayJuego3 db '# # # # '
-	arrayJuego4 db ' # # # #'
-	arrayJuego5 db '#x#x#x#x'
-	arrayJuego6 db	'x#x#x#x#'
-	arrayJuego7 db '#x#x#x#x'
+;	arrayJuego 	db	'o#o#o#o#'
+;	arrayJuego1 db '#o#o#o#o'
+;	arrayJuego2 db	'o#o#o#o#'
+;	arrayJuego3 db '# # # # '
+;	arrayJuego4 db ' # # # #'
+;	arrayJuego5 db '#x#x#x#x'
+;	arrayJuego6 db	'x#x#x#x#'
+;	arrayJuego7 db '#x#x#x#x'
+;	lenArrayJuego	equ $ - arrayJuego 
+	
+	arrayJuego 	db	'o#o# #o#'
+	arrayJuego1 db '#o# #x#o'
+	arrayJuego2 db	'O# #o# #'
+	arrayJuego3 db '#x# # # '
+	arrayJuego4 db ' # #o#x#'
+	arrayJuego5 db '#x# #x#x'
+	arrayJuego6 db	'X#x# #x#'
+	arrayJuego7 db '#x#x# #x'
 	lenArrayJuego	equ $ - arrayJuego 
 
 	errMov	db 'Movimiento no permitido', 0x0A
@@ -93,11 +103,15 @@ section .data
 
 	errFicha	db 'No puede elegir esta posición.', 0x0A
 	lenErrFicha	equ	$ - errFicha
+	
+	errPosReina	db 'No puede elegir esta posición.', 0x0A, 'Es reina, no Super Man.'
+	lenErrPosReina	equ	$ - errFicha
+
 
 	errVacio	db 'No hay ficha para mover', 0x0A
 	lenErrVacio	equ	$ - errVacio
 
-	errTurno	db 'Continua el juador: ' 
+	errTurno	db 'Continua el juador:  ' 	,0x0A;r8
 	lenErrTurno	equ	$ - errTurno
 
 	msjInicial	db 'Bienvenido al juegos damas', 0x0A, ' Inician las "x"',0x0A
@@ -106,20 +120,23 @@ section .data
 	msjMoverDe	db '¿Cuál ficha desea mover?', 0x0A
 	lenMsjMoverDe	equ	$ - msjMoverDe
 
-	msjMoverA	db '¿A que posición la desea mover?',0x0A
+	msjMoverA	db '¿A qué posición la desea mover?',0x0A
 	lenMsjMoverA equ	$ - msjMoverA
 
 	msjOk	db 'Ok entró', 0x0A
 	lenMsjOk	equ	$ - msjOk
 	
-	msjComerMas	db 'Ok entró', 0x0A
+	msjComerMas	db '¿Desea continuar comiendo?',0x0A
 	lenComeMas	equ	$ - msjComerMas
 
 
+
 	
-;	datos	db	'0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P Q R S T U V W'
+
 	datos	db	'1234oooooooo        xxxxxxxxxxxx'	;pasar a -> bss
 	tempoo db '??'
+
+
 SECTION .text
 	global _start
 
@@ -166,8 +183,9 @@ FinDelJuego:
 
 
 leerPosA: 
-	push	rax
-	push	rbx
+;	push	rax
+;	push	rbx
+	
 	.leerA:
 	; guarda en r9 las posicion del arrayJuego
 	print	msjMoverDe, lenMsjMoverDe
@@ -200,37 +218,30 @@ leerPosA:
 	
 .jueganX:	
 	;validar que sea una ficha del actual jugador.
-;	juegan 'x','X', 'o'  ; 'o'/'x', 'O'/'X', 'o'/'x'		;macro!
 	cmp	bl, 'x'
-	je		.continueX
+	je		.finLeerA
 	cmp	bl, 'X'
 	jne	.noPuedeA
-
-	.continueX:	
-	nop
-	;	mov	byte[tempoo], bl
-	;	print	tempoo, 2
-	;	print	msjMoverA, lenMsjMoverA
-	jmp	.finLeerA
+	je		.esReina
 
 .jueganO:
-;	juegan 'o','O', 'x'  ; 'o'/'x', 'O'/'X', 'o'/'x'
 	cmp	bl, 'o'
-	je		.continueO
+	je		.finLeerA
 	cmp	bl, 'O'
 	jne	.noPuedeA
-
-	.continueO:
-	mov	byte[tempoo], bl
-	print	tempoo, 2
-	jmp	.finLeerA
+	je		.esReina
 
 .noPuedeA:
 		print  errFicha, lenErrFicha
 		jmp .leerA
+
+.esReina:	
+	nop
+	;call	moverReina:
+	
 .finLeerA:
-	pop	rbx
-	pop	rax
+;	pop	rbx
+;	pop	rax
 	ret
 
 	;aqui tiene en el "bl" la ficha a mover
@@ -240,7 +251,7 @@ leerPosA:
 
 
 
-leerPosB
+leerPosB:
 	push	rax
 	push	rbx
 	xor	rax, rax
@@ -268,11 +279,22 @@ leerPosB
 	.dest:	;q!
 	mov	r10, rax	; se guarda la pos elegida	!!!!!!!!!!!!!!!!!!
 
-;jmp .finLeerB	
-	
 
+	mov	dl, byte[arrayJuego+r9]; pos elegida
+	cmp 	dl, 'a'
+	jnb	.noReina 		;si  es menor, es reina, es mayuscula:;
+	call	moverReina		; salte si no es menor
+	jmp	.finLeerB
+			
+	.noReina:
+
+
+;	;;	validar sí reina!
+		;si el deplazamieto es simetrico, igual en 'x' y 'y'
+	;  let1 - letb = num1 - num2
+	
 .validar:
-	;r8	= jugador actual
+	;r8	= jugador actual:
 	;r9  + arrayJuego = 	pos origen, ficha actual
 	;r10 + arrayJuego = 	pos destino
 	xor 	rax, rax
@@ -350,10 +372,7 @@ leerPosB
 	sub	bl, '0'	
 	dec	bl
 	add	rax, rbx
-.info:
-;	exit
-;	cmp	al, 2;
-;	je		infoOk
+	;.info:
 	xor	rbx, rbx
 	mov	bl, byte[arrayJuego+rax]; pos elegida
 	cmp	rbx, r8
@@ -361,13 +380,10 @@ leerPosB
 ;	cmp	bl, byte[r8]
 	cmp	rbx, ' '
 	je		.noPuedeB
-	
 	mov	byte[arrayJuego+rax], ' '	
-	;mov	r11, rax		;		!!!!!!!!!!!!!!!!!!!!!!
-	.finB:
-
+	;.finB:
 	jmp	.finLeerB
-	;exit
+
 	;;;;;;;;;;;;;,,,,	
 
 
@@ -430,15 +446,38 @@ leerPosB
 	jmp	.finLeerB	
 
 .noPuedeB:
-		print	 errFicha, lenErrFicha
-;exit
-		jmp	.leerB
+	print	 errFicha, lenErrFicha
+	jmp	.leerB
+
 .finLeerB:
-;exit
 	pop	rbx
 	pop	rax
 	ret
 
+
+moverReina:
+	mov	al, byte [buffPosA]
+	mov	bl, byte [buffPosA+1]
+	mov	cl, byte [buffPosB]
+	mov	dl, byte [buffPosB+1]
+	sub	al, cl
+	sub	bl, dl
+	cmp	al, bl
+	jne	.no_puede_reina
+
+	cmp	r8,'o'
+	je		.comer_RO
+	cmp	r8,'x'
+	je		.comer_RX
+
+	.comer_RO:
+
+	.comer_RX:	
+
+	.no_puede_reina:
+	print errPosReina, lenErrPosReina
+
+	ret
 
 cambioFichas:
 	push 	r9
@@ -450,13 +489,35 @@ cambioFichas:
 	mov	al, byte[arrayJuego + r9]
 	mov	byte[arrayJuego + r9], ' '
 	mov	byte[arrayJuego + r10], al 
-	call	llenarTablero
+	call	validarReina
+;	call	llenarTablero
 	call	cambioDeJugador
-
-
+	
 	pop	r10
 	pop	r9
+	ret
 
+
+validarReina:
+	mov	cl, byte [buffPosB]
+	cmp	r8,'o'
+	je		.llego_abajo
+	cmp	r8,'x'
+	je		.llego_arriba
+
+	.llego_abajo:
+	cmp	cl,'h'
+	jne		.no_reina
+	mov	byte[arrayJuego + r10], 'O' 
+
+	.llego_arriba:
+	cmp	cl, 'a'
+	jne		.no_reina
+	mov	byte[arrayJuego + r10], 'X' 
+
+	;.fin_val_reina:
+	nop
+	.no_reina:
 	ret
 
 cambioDeJugador:
@@ -479,36 +540,6 @@ cambioDeJugador:
 ; no está ocupada
 
 
-
-;.jueganX:
-;;	juegan 'x','X', 'o'  ; 'o'/'x', 'O'/'X', 'o'/'x'	
-;	cmp	bh, 'x'
-;	je		.continueX
-;	cmp	bh, 'X'
-;	jne	.noPuedeB
-;	.continueX:
-;	mov	byte[tempoo], bh
-;	print	tempoo, 2
-;	print	msjMoverA, lenMsjMoverA
-;;validar movimiento
-;	xor	r8, r8
-;	mov	r8, 'o'
-;	jmp	.finLeer
-;;;;;;;;;;;;;
-;.jueganO:
-;;	juegan 'o','O', 'x'  ; 'o'/'x', 'O'/'X', 'o'/'x'
-;	cmp	bl, 'o'
-;	je		.continueO
-;	cmp	bl, 'O'
-;	jne	.noPuedeB
-;	.continueO:
-;	mov	byte[tempoo], bl
-;	print	tempoo, 2
-;	print	msjMoverA, lenMsjMoverA
-;;;validar movimiento
-;	xor 	r8, r8
-;	mov	r8, 'x'
-;	jmp	.finLeer
 
 infoOk:
 	print msjOk, lenMsjOk
