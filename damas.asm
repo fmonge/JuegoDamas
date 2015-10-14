@@ -111,6 +111,10 @@ section .data
 
 	msjOk	db 'Ok entró', 0x0A
 	lenMsjOk	equ	$ - msjOk
+	
+	msjComerMas	db 'Ok entró', 0x0A
+	lenComeMas	equ	$ - msjComerMas
+
 
 	
 ;	datos	db	'0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P Q R S T U V W'
@@ -141,18 +145,17 @@ _start:
 
 juegoLoop:
 	call	llenarDatosJuego
-	call 	llenarTablero
 
+	call 	llenarTablero
+	
+	;call	verficarGanador
+	
 	print tablero, lenTablero	
 
 	call	leerPosA
 
 	call	leerPosB
 
-	;call 	llenarTablero
-	
-	;call 	cambioDeJugador
-	
 	call  cambioFichas
 	
 	jmp	juegoLoop
@@ -203,10 +206,11 @@ leerPosA:
 	cmp	bl, 'X'
 	jne	.noPuedeA
 
-	.continueX:
-	mov	byte[tempoo], bl
-	print	tempoo, 2
-	print	msjMoverA, lenMsjMoverA
+	.continueX:	
+	nop
+	;	mov	byte[tempoo], bl
+	;	print	tempoo, 2
+	;	print	msjMoverA, lenMsjMoverA
 	jmp	.finLeerA
 
 .jueganO:
@@ -232,7 +236,11 @@ leerPosA:
 	;aqui tiene en el "bl" la ficha a mover
 	;y en r9 la pos en el arrayJuego
 
-leerPosB:	;BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBb 
+
+
+
+
+leerPosB
 	push	rax
 	push	rbx
 	xor	rax, rax
@@ -243,8 +251,7 @@ leerPosB:	;BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBb
 	leer  buffPosB, lenBuffPos	; len de lectura en rax
 	cmp	rax, 3	;dos letras y el retorno
 	jne	.noPuedeB	;comprobar la lectura
-;	je		infoOk		;ok
-;	xor	rax, rax
+	;val
 	mov	al, byte [buffPosB]
 	mov	bl, byte [buffPosB+1]
 	sub	al, 'a'	
@@ -252,14 +259,17 @@ leerPosB:	;BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBb
 	sub	bl, '0'	
 	dec	bl
 	add	rax, rbx
-	cmp	al, 5	;
-	je		infoOk
+;	cmp	al, 5	;
+;	je		infoOk
 	xor	rbx, rbx
 	mov	bl, byte[arrayJuego+rax]; pos elegida
 	cmp	bl, ' '
-	jne	.noPuedeB	; si hay ficha come! verificar!! 
-	
+	jne	.noPuedeB	; 
+	.dest:	;q!
 	mov	r10, rax	; se guarda la pos elegida	!!!!!!!!!!!!!!!!!!
+
+;jmp .finLeerB	
+	
 
 .validar:
 	;r8	= jugador actual
@@ -274,15 +284,102 @@ leerPosB:	;BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBb
 	mov	cl, byte [buffPosB]
 	mov	dl, byte [buffPosB+1]
 
-
+;jmp	.validar_mov_normal
 .validar_comer:
-	nop
-.validar_comer_comer:
-	nop
+	;;;;;;;;;;;;,,,	
+	cmp	r8,'o'
+	je		.fComer_O
+	cmp	r8,'x'
+	je		.fComer_X
+	;filas
+	.fComer_O:					;se mueven para abajo
+	add	al, 2		;salto de 2 para comer
+	cmp	al, cl
+	jne	.validar_mov_normal
+	je		.cComer_O
+			
+	;jmp	.finLeerB
+	.fComer_X:					;se mueven para arriba
+	mov	al, byte [buffPosA]
+	sub	al, 2
+	cmp	al, cl
+	jne	.validar_mov_normal
+	je		.cComer_X
+
+	;columnas
+	.cComer_X:	
+
+	inc	al				;al a comer
+	add	dl, 2
+	cmp	bl, dl
+	je		.pos_mas
+	mov	dl, byte [buffPosB+1]
+	sub	dl, 2
+	cmp	bl, dl
+	jne	.validar_mov_normal
+	je		.pos_menos
+
+	.cComer_O:	
+
+	dec	al				;al a comer
+	add	dl, 2
+	cmp	bl, dl
+	je		.pos_mas
+	mov	dl, byte [buffPosB+1]
+	sub	dl, 2
+	cmp	bl, dl
+	jne	.validar_mov_normal
+	je		.pos_menos
+	
+	.pos_mas:	
+	dec	dl
+	jmp	.aComer
+
+	.pos_menos:
+	inc	dl
+	jmp	.aComer
+
+	
+	.aComer:
+;	exit
+	;hay que validar ficha enemigo.
+	mov	bl, dl
+	
+	sub	al, 'a'	
+	imul	rax, 8
+	sub	bl, '0'	
+	dec	bl
+	add	rax, rbx
+.info:
+;	exit
+;	cmp	al, 2;
+;	je		infoOk
+	xor	rbx, rbx
+	mov	bl, byte[arrayJuego+rax]; pos elegida
+	cmp	rbx, r8
+	je		.noPuedeB	 
+;	cmp	bl, byte[r8]
+	cmp	rbx, ' '
+	je		.noPuedeB
+	
+	mov	byte[arrayJuego+rax], ' '	
+	;mov	r11, rax		;		!!!!!!!!!!!!!!!!!!!!!!
+	.finB:
+
+	jmp	.finLeerB
+	;exit
+	;;;;;;;;;;;;;,,,,	
+
+
+;.validar_comer_comer:
+;	nop
 
 .validar_mov_normal:
 	; Movimieto Normal (simple, diagonal)
-
+	mov	al, byte [buffPosA]
+	mov	bl, byte [buffPosA+1]
+	mov	cl, byte [buffPosB]
+	mov	dl, byte [buffPosB+1]
 	;valida en caso 1 y 8	
 
 	cmp 	bl, '1'
@@ -301,7 +398,9 @@ leerPosB:	;BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBb
 
 	jmp 	.paseN
 
-	.pase1:
+	.pase1:	
+	;cmp	dl, '3'	;comer salto de 2
+	;je		.validarComer
 	cmp	dl, '2'	
 	jne	.noPuedeB	
 	jmp	.paseN	
@@ -309,31 +408,27 @@ leerPosB:	;BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBb
 	cmp	dl, '7'
 	jne	.noPuedeB
 	jmp	.paseN
-
 	.paseN:	
 	cmp	r8,'o'
 	je		.vNormal_O
 	cmp	r8,'x'
 	je		.vNormal_X
 
-;validar
 	.vNormal_O:					;se mueven para abajo
-
 	inc	al
 	cmp	al, cl
 	jne	.noPuedeB
 	;validar col
 		
-
 	jmp	.finLeerB
 	.vNormal_X:					;se mueven para arriba
 	dec	al
 	cmp	al, cl
 	jne	.noPuedeB
 	;validar col
-
 	
-	jmp	.finLeerB
+	jmp	.finLeerB	
+
 .noPuedeB:
 		print	 errFicha, lenErrFicha
 ;exit
