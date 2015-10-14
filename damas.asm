@@ -12,15 +12,15 @@ section .bss
 	buffFila:		resb 8	;
 	buffColu:		resb 8		;
 
-%macro	juegan 3; 'o'/'x', 'O'/'X', 'o'/'x'	
+%macro	juegan 4; 'o'/'x', 'O'/'X', 'o'/'x'	
 					; Mi ficha, mi ficha, ficha del otro
 	;&&jueganN:
 	cmp	bl, %1
-	je		.continueO
+	je		%4
 	cmp	bl, %1
 	jne	.noPuede
-	.continueO:
 	mov	byte[tempoo], bl
+	%4
 	print	tempoo, 2
 	print	msjMoverA, lenMsjMoverA
 ;validar movimiento
@@ -146,6 +146,10 @@ juegoLoop:
 	print tablero, lenTablero	
 
 	call	leerPosA
+
+	call	leerPosB
+
+	call 	cambioDeJugador
 	
 	jmp	juegoLoop
 
@@ -169,8 +173,8 @@ leerPosA:
 			;una letra y un numero mas entet
 
 	cmp	rax, 3	;dos letras y el retorno
-	jne	.leerA	;comprobar la lectura
-;	je		infoOk
+	jne	.noPuedeA	;comprobar la lectura
+	;je		infoOk
 	mov	al, byte [buffPosA]
 	mov	bl, byte [buffPosA+1]
 	sub	al, 'a'	
@@ -192,56 +196,178 @@ leerPosA:
 	cmp	r8,'x'
 	je		.jueganX
 	
-.jueganX:
-	juegan 'x','X', 'o'  ; 'o'/'x', 'O'/'X', 'o'/'x'	
-	
-;	cmp	bl, 'x'
-;	je		.continueX
-;	cmp	bl, 'X'
-;	jne	.noPuede
-;	.continueX:
-;	mov	byte[tempoo], bl
-;	print	tempoo, 2
-;	print	msjMoverA, lenMsjMoverA
-;;validar movimiento
-;	xor	r8, r8
-;	mov	r8, 'o'
-;	jmp	.finLeer
-;;;;;;;;;;;;;;
-	
-;;;;;;;;;;;;;;
+.jueganX:	
+	;validar que sea una ficha del actual jugador.
+;	juegan 'x','X', 'o'  ; 'o'/'x', 'O'/'X', 'o'/'x'		;macro!
+	cmp	bl, 'x'
+	je		.continueX
+	cmp	bl, 'X'
+	jne	.noPuedeA
+
+	.continueX:
+	mov	byte[tempoo], bl
+	print	tempoo, 2
+	print	msjMoverA, lenMsjMoverA
+	jmp	.finLeerA
 
 .jueganO:
-	juegan 'o','O', 'x'  ; 'o'/'x', 'O'/'X', 'o'/'x'	
-	
-;	cmp	bl, 'o'
-;	je		.continueO
-;	cmp	bl, 'O'
-;	jne	.noPuede
-;	.continueO:
-;	mov	byte[tempoo], bl
-;	print	tempoo, 2
-;	print	msjMoverA, lenMsjMoverA
-;;validar movimiento
-;	xor 	r8, r8
-;	mov	r8, 'x'
-;	jmp	.finLeer
+;	juegan 'o','O', 'x'  ; 'o'/'x', 'O'/'X', 'o'/'x'
+	cmp	bl, 'o'
+	je		.continueO
+	cmp	bl, 'O'
+	jne	.noPuedeA
 
+	.continueO:
+	mov	byte[tempoo], bl
+	print	tempoo, 2
+	jmp	.finLeerA
 
-.noPuede:
+.noPuedeA:
 		print  errFicha, lenErrFicha
-.finLeer:
+		jmp .leerA
+.finLeerA:
 	pop	rbx
 	pop	rax
 	ret
 
 	;aqui tiene en el "bl" la ficha a mover
 	;y en r9 la pos en el arrayJuego
-leerPosB:
+
+leerPosB:	;BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBb 
+	push	rax
+	push	rbx
+	xor	rax, rax
+
+.leerB:	
+	;guarda en r10 las posicion del arrayJuego
+	print	msjMoverA, lenMsjMoverA; mover a x,y
 	leer  buffPosB, lenBuffPos	; len de lectura en rax
-	print buffPosB, lenBuffPos
+	cmp	rax, 3	;dos letras y el retorno
+	jne	.noPuedeB	;comprobar la lectura
+;	je		infoOk		;ok
+;	xor	rax, rax
+	mov	al, byte [buffPosB]
+	mov	bl, byte [buffPosB+1]
+	sub	al, 'a'	
+	imul	rax, 8
+	sub	bl, '0'	
+	dec	bl
+	add	rax, rbx
+	cmp	al, 5	;
+	je		infoOk
+	xor	rbx, rbx
+	mov	bl, byte[arrayJuego+rax]; pos elegida
+	cmp	bl, ' '
+	jne	.noPuedeB
+	
+	mov	r10, rax	; se guarda la pos elegida	
+jmp	.finLeerB
+
+.validar:
+	;r8	= jugador actual
+	;r9  + arrayJuego = 	pos origen, ficha actual
+	;r10 + arrayJuego = 	pos destino
+	
+	mov	al, byte [buffPosA]
+	mov	ah, byte [buffPosA+1]
+	mov	bl, byte [buffPosB]
+	mov	bh, byte [buffPosB+1]
+
+	sub	al, 'a'	
+	sub	ah, '0'	
+	dec	ah
+
+	sub	bl, 'a'	
+	sub	bh, '0'	
+	dec	bh	
+
+.Validar_Comer:
+	nop
+
+.Vaildar_Mov_Normal:
+	cmp	r8,'o'
+	je		.vNormal_O	
+	cmp	r8,'x'
+	je		.vNormal_X
+	
+;validar
+.vNormal_O:			;se mueven para abajo
+	mov	cl, al
+	inc	cl
+	cmp	cl, bl
+	jne	.noPuedeB
+	
+	.contunue_Normal_O:	
+	jmp	.finLeerB
+			
+.vNormal_X:			;se mueven para arriba
+	mov	cl, al
+	dec	cl
+	cmp	cl, al
+	jne	.noPuedeB
+
+	
+	
+	jmp	.finLeerB
+.noPuedeB:
+		print	 errFicha, lenErrFicha
+		jmp	.leerB
+.finLeerB:	
+	
+	pop	rbx
+	pop	rax
 	ret
 
+cambioDeJugador:
+	cmp	r8,'o'
+	je		.cambio_a_X	
+	cmp	r8,'x'
+	je		.cambio_a_O
+.cambio_a_O:
+	xor	r8, r8
+	mov	r8, 'o'
+	ret
+.cambio_a_X:
+	xor 	r8, r8
+	mov	r8, 'x'
+	ret
+
+
+; aquí:
+; es una posición valida
+; no está ocupada
+
+
+
+;.jueganX:
+;;	juegan 'x','X', 'o'  ; 'o'/'x', 'O'/'X', 'o'/'x'	
+;	cmp	bh, 'x'
+;	je		.continueX
+;	cmp	bh, 'X'
+;	jne	.noPuedeB
+;	.continueX:
+;	mov	byte[tempoo], bh
+;	print	tempoo, 2
+;	print	msjMoverA, lenMsjMoverA
+;;validar movimiento
+;	xor	r8, r8
+;	mov	r8, 'o'
+;	jmp	.finLeer
+;;;;;;;;;;;;;
+;.jueganO:
+;;	juegan 'o','O', 'x'  ; 'o'/'x', 'O'/'X', 'o'/'x'
+;	cmp	bl, 'o'
+;	je		.continueO
+;	cmp	bl, 'O'
+;	jne	.noPuedeB
+;	.continueO:
+;	mov	byte[tempoo], bl
+;	print	tempoo, 2
+;	print	msjMoverA, lenMsjMoverA
+;;;validar movimiento
+;	xor 	r8, r8
+;	mov	r8, 'x'
+;	jmp	.finLeer
 
 infoOk:
 	print msjOk, lenMsjOk
@@ -276,9 +402,6 @@ llenarDatosJuegoAux:
 	jne	llenarDatosJuegoAux
 	ret
 
-
-
-
 llenarTablero:
 	push	rax			; tmp valor a mover
 	push	rbx			; filas
@@ -310,7 +433,6 @@ llenarTablero:
 	pop	rbx
 	pop	rax
 
-
 llenarTableroAux:
 ;call filas
 	xor	r12, r12
@@ -331,10 +453,8 @@ llenarTableroAux:
 	cmp	r15, 5
 	jne	.for2
 	jmp	.for1
-
 .listo:
 	ret
-
 
 filas:
 ;	jmp	.cargar
