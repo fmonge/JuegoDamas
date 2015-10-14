@@ -149,18 +149,17 @@ juegoLoop:
 
 	call	leerPosB
 
-	call 	cambioDeJugador
+	;call 	llenarTablero
+	
+	;call 	cambioDeJugador
+	
+	call  cambioFichas
 	
 	jmp	juegoLoop
 
 FinDelJuego:
 	exit
 
-
-juego:
-
-	print msjInicial, lenMsjInicial
-	print tablero, lenTablero
 
 
 leerPosA: 
@@ -189,7 +188,7 @@ leerPosA:
 	xor	rbx, rbx
 	mov	bl, byte[arrayJuego+rax]; pos elegida
 
-	mov	r9, rax	; se guarda la pos elegida
+	mov	r9, rax	; se guarda la pos elegida   !!!!!!!!!!!!!!!!!
 
 	cmp	r8,'o'
 	je		.jueganO	
@@ -258,64 +257,111 @@ leerPosB:	;BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBb
 	xor	rbx, rbx
 	mov	bl, byte[arrayJuego+rax]; pos elegida
 	cmp	bl, ' '
-	jne	.noPuedeB
+	jne	.noPuedeB	; si hay ficha come! verificar!! 
 	
-	mov	r10, rax	; se guarda la pos elegida	
-jmp	.finLeerB
+	mov	r10, rax	; se guarda la pos elegida	!!!!!!!!!!!!!!!!!!
 
 .validar:
 	;r8	= jugador actual
 	;r9  + arrayJuego = 	pos origen, ficha actual
 	;r10 + arrayJuego = 	pos destino
-	
+	xor 	rax, rax
+	xor	rbx, rbx
+	xor	rcx, rcx
+
 	mov	al, byte [buffPosA]
-	mov	ah, byte [buffPosA+1]
-	mov	bl, byte [buffPosB]
-	mov	bh, byte [buffPosB+1]
+	mov	bl, byte [buffPosA+1]
+	mov	cl, byte [buffPosB]
+	mov	dl, byte [buffPosB+1]
 
-	sub	al, 'a'	
-	sub	ah, '0'	
-	dec	ah
 
-	sub	bl, 'a'	
-	sub	bh, '0'	
-	dec	bh	
-
-.Validar_Comer:
+.validar_comer:
+	nop
+.validar_comer_comer:
 	nop
 
-.Vaildar_Mov_Normal:
+.validar_mov_normal:
+	; Movimieto Normal (simple, diagonal)
+
+	;valida en caso 1 y 8	
+
+	cmp 	bl, '1'
+	je		.pase1
+	cmp	bl, '8'
+	je		.pase8	
+	mov	bh, bl
+	inc	bh
+	cmp	bh, dl
+	je		.paseN
+
+	mov	bh, bl
+	dec	bh
+	cmp	bh, dl
+	jne	.noPuedeB	
+
+	jmp 	.paseN
+
+	.pase1:
+	cmp	dl, '2'	
+	jne	.noPuedeB	
+	jmp	.paseN	
+	.pase8:
+	cmp	dl, '7'
+	jne	.noPuedeB
+	jmp	.paseN
+
+	.paseN:	
 	cmp	r8,'o'
-	je		.vNormal_O	
+	je		.vNormal_O
 	cmp	r8,'x'
 	je		.vNormal_X
-	
-;validar
-.vNormal_O:			;se mueven para abajo
-	mov	cl, al
-	inc	cl
-	cmp	cl, bl
-	jne	.noPuedeB
-	
-	.contunue_Normal_O:	
-	jmp	.finLeerB
-			
-.vNormal_X:			;se mueven para arriba
-	mov	cl, al
-	dec	cl
-	cmp	cl, al
-	jne	.noPuedeB
 
-	
+;validar
+	.vNormal_O:					;se mueven para abajo
+
+	inc	al
+	cmp	al, cl
+	jne	.noPuedeB
+	;validar col
+		
+
+	jmp	.finLeerB
+	.vNormal_X:					;se mueven para arriba
+	dec	al
+	cmp	al, cl
+	jne	.noPuedeB
+	;validar col
+
 	
 	jmp	.finLeerB
 .noPuedeB:
 		print	 errFicha, lenErrFicha
+;exit
 		jmp	.leerB
-.finLeerB:	
-	
+.finLeerB:
+;exit
 	pop	rbx
 	pop	rax
+	ret
+
+
+cambioFichas:
+	push 	r9
+	push	r10
+	;r8	= jugador actual
+	;r9  + arrayJuego = 	pos origen, ficha actual
+	;r10 + arrayJuego = 	pos destino
+
+	mov	al, byte[arrayJuego + r9]
+	mov	byte[arrayJuego + r9], ' '
+	mov	byte[arrayJuego + r10], al 
+	call	llenarTablero
+	call	cambioDeJugador
+
+
+	pop	r10
+	pop	r9
+
 	ret
 
 cambioDeJugador:
