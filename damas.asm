@@ -78,25 +78,39 @@ section .data
 
 	
 	; los '#' son los espacios en donde no puede ir fichas
-;	arrayJuego 	db	'o#o#o#o#'
-;	arrayJuego1 db '#o#o#o#o'
-;	arrayJuego2 db	'o#o#o#o#'
-;	arrayJuego3 db '# # # # '
-;	arrayJuego4 db ' # # # #'
-;	arrayJuego5 db '#x#x#x#x'
+
+	; esenario inicial:
+	arrayJuego 	db	'o#o#o#o#'
+	arrayJuego1 db '#o#o#o#o'
+	arrayJuego2 db	'o#o#o#o#'
+	arrayJuego3 db '# # # # '
+	arrayJuego4 db ' # # # #'
+	arrayJuego5 db '#x#x#x#x'
+	arrayJuego6 db	'x#x#x#x#'
+	arrayJuego7 db '#x#x#x#x'
+	lenArrayJuego	equ $ - arrayJuego 
+	
+;	arrayJuego 	db	'o#o# #o#'
+;	arrayJuego1 db '#o# #x#o'
+;	arrayJuego2 db	'O# #o# #'
+;	arrayJuego3 db '#x# # # '
+;	arrayJuego4 db ' # #o#x#'
+;	arrayJuego5 db '#x# #x#x'
+;	arrayJuego6 db	'X#x# #x#'
+;	arrayJuego6 db '#x#x# #x'
+;	lenArrayJuego	equ $ - arrayJuego 
+
+	; para probar fin de juego
+;	arrayJuego 	db	' # # # #'
+;	arrayJuego1 db '# # # # '
+;	arrayJuego2 db	' # # # #'
+;	arrayJuego3 db '# #o# # '
+;	arrayJuego4 db ' #x# # #'
+;	arrayJuego5 db '#x# #x#x'
 ;	arrayJuego6 db	'x#x#x#x#'
 ;	arrayJuego7 db '#x#x#x#x'
 ;	lenArrayJuego	equ $ - arrayJuego 
-	
-	arrayJuego 	db	'o#o# #o#'
-	arrayJuego1 db '#o# #x#o'
-	arrayJuego2 db	'O# #o# #'
-	arrayJuego3 db '#x# # # '
-	arrayJuego4 db ' # #o#x#'
-	arrayJuego5 db '#x# #x#x'
-	arrayJuego6 db	'X#x# #x#'
-	arrayJuego7 db '#x#x# #x'
-	lenArrayJuego	equ $ - arrayJuego 
+
 
 	errMov	db 'Movimiento no permitido', 0x0A
 	lenErrMov	equ	$ - errMov
@@ -128,6 +142,10 @@ section .data
 	
 	msjComerMas	db '¿Desea continuar comiendo?',0x0A
 	lenComeMas	equ	$ - msjComerMas
+
+	msjGanaO	db '¡Ganan las fichas O!',0x0A
+	msjGanaX	db '¡Ganan las fichas X!',0x0A
+	lenMsjGana	equ	$ - msjGanaX
 
 
 
@@ -164,10 +182,12 @@ juegoLoop:
 	call	llenarDatosJuego
 
 	call 	llenarTablero
+
+	print tablero, lenTablero	
+
+	call	finSinFichas	
 	
 	;call	verficarGanador
-	
-	print tablero, lenTablero	
 
 	call	leerPosA
 
@@ -547,6 +567,54 @@ infoOk:
 	
 
 
+finSinFichas:
+	; verifica si un jugador se quedó sin fichas
+	; de ser así finaliza el juego
+	push	rax	
+	push	rbx
+	push	rcx
+	xor	rax, rax	
+	xor	rbx, rbx
+	xor	rcx, rcx
+
+	.hay_o:
+		;validar ! -.-
+	mov	bl, byte[arrayJuego+rax]
+	inc	rax
+	cmp	bl, 'o'
+	je		.ok_hay
+	cmp	bl, 'O'
+	je		.ok_hay
+	cmp	rax, lenArrayJuego 
+	je		.no_hay_o
+	jne	.hay_o
+		
+	
+	.hay_x:	
+	mov	bl, byte[arrayJuego+rcx]
+	inc	rcx
+	cmp	bl, 'o'
+	je		.ok_hay
+	cmp	bl, 'O'
+	je		.ok_hay
+	cmp	rcx, lenArrayJuego
+	je		.no_hay_x
+	jne	.hay_x
+
+	.ok_hay:
+
+	pop	rcx
+	pop	rbx
+	pop	rax
+	ret
+	.no_hay_x:
+	;ganan las o
+	print	msjGanaO, lenMsjGana	
+	exit
+	.no_hay_o:
+	;ganan las x
+	print	msjGanaX, lenMsjGana	
+	exit
 
 
 llenarDatosJuego:

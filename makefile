@@ -1,5 +1,5 @@
 #programa para ensamblar
-ASSEMBLER = yasm
+ASSEMBLER = nasm
 # programa para enlazar
 LINKER = ld
 # banderas
